@@ -20,12 +20,13 @@ def load_or_create_dataset(filepath=None):
             'goal':np.random.choice(['weight loss','muscle gain','maintenance'],100),
             'weight':np.random.randint(50,120,100),
             'height':np.random.randint(150,200,100),
-            'current_calories':np.random.randint(1200,3500,1000),
+            'current_calories':np.random.randint(1200,3500,100),
             'suggested_carbs':np.random.uniform(100,400,100),
             'suggested_protein':np.random.uniform(50,150,100),
             'suggested_fat':np.random.uniform(40,100,100)  
         }
         return pd.DataFrame(data)
+    
 df = load_or_create_dataset(filepath=None)
 df = df.dropna()
 

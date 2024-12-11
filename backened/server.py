@@ -75,7 +75,7 @@ def extract_user_info(user_input):
 
 def check_conversation_complete(user_info):
     required_keys = ['age','gender','activity_level','goal','weight','height','current_calories']
-    return all(key user_info for key in required_keys)
+    return all(key in user_info for key in required_keys)
 
 #Define the food suggestion function
 def suggest_foods(calories,carbs,protein,fat):
@@ -127,21 +127,26 @@ user_info.update(extracted_info)
 conversation_context[user_id] = user_info
 
 if not check_conversation_complete(user_info):
-    missing_info = [key for key in['age','gender','activity_level','goal','weight','height','current_calories']if key not in user_info]
-    prompts = {
-        'age': "What is your age?",
-        'gender': "What is your gender?",
-        'activity_level': "What is your activity level(low,moderate or high ?)",
-        'goal': "What is your goal(weight loss,muscle gain,maintainance ?)",
-        'weight':"What is your weight (in kg)?",
-        'height': "What is your height (in cm)?",
-        'current_calories':"What is your current calorie intake?"
+    missing_info = [key for key in ['age', 'gender', 'activity_level', 'goal', 'weight', 'height', 'current_calories'] if key not in user_info]
 
-    }
-    next_question = prompts[missing_info[0]]
-    return jsonify({'response':next_question})
+    if missing_info:
+        prompts = {
+            'age': "What is your age?",
+            'gender': "What is your gender?",
+            'activity_level': "What is your activity level (low, moderate, or high?)",
+            'goal': "What is your goal (weight loss, muscle gain, or maintenance?)",
+            'weight': "What is your weight (in kg)?",
+            'height': "What is your height (in cm)?",
+            'current_calories': "What is your current calorie intake?"
+        }
+
+        next_question = prompts[missing_info[0]]
+        return jsonify({'response': next_question})
+    else:
+        return jsonify({'response': "All required information is already provided!"})
+
 else:
-    #Prepare input data for prediction
+    # Prepare input data for prediction
     age = user_info['age']
     gender = user_info['gender']
     activity_level = user_info['activity_level']
@@ -150,39 +155,38 @@ else:
     height = user_info['height']
     current_calories = user_info['current_calories']
 
-    #Scale numerical features
-    scaled_data = scaler.transform([['age','weight','height','current_calories']])
+    # Scale numerical features
+    scaled_data = scaler.transform([[age, weight, height, current_calories]])
 
-    #Encode categorical features
-    gender_encoded = np.array([label_encoders['genders'].transform(['gender'])[0]]).reshape(1 ,-1)
-    activity_level_encoded = np.array([label_encoders['activity_level'].transform(['activity_level'])[0]]).reshape(1 ,-1)
-    goal_encoded = np.array([label_encoders['goal_encoded'].transform(['goal_encoded'])[0]]).reshape(1 ,-1)
+    # Encode categorical features
+    gender_encoded = np.array([label_encoders['genders'].transform([gender])[0]]).reshape(1, -1)
+    activity_level_encoded = np.array([label_encoders['activity_level'].transform([activity_level])[0]]).reshape(1, -1)
+    goal_encoded = np.array([label_encoders['goal_encoded'].transform([goal])[0]]).reshape(1, -1)
 
-    #Combine all features like a single input array
-    final_input = np.stack((scaled_data,gender_encoded,activity_level_encoded,goal_encoded))
+    # Combine all features like a single input array
+    final_input = np.concatenate((scaled_data, gender_encoded, activity_level_encoded, goal_encoded), axis=1)
 
-    #Make prediction using the model
-    predictions=model.predict(final_input)
+    # Make prediction using the model
+    predictions = model.predict(final_input)
 
-    #Extract prediction results
+    # Extract prediction results
     predicted_calories = predictions[0][0]
     predicted_carbs = predictions[0][1]
     predicted_protein = predictions[0][2]
     predicted_fat = predictions[0][3]
 
-    #log predicted value for debugging
-    print(f"Calories: {predicted_calories},Carbs: {predicted_carbs},Protein: {predicted_protein},Fat: {predicted_fat}")
+    # Log predicted value for debugging
+    print(f"Calories: {predicted_calories}, Carbs: {predicted_carbs}, Protein: {predicted_protein}, Fat: {predicted_fat}")
 
-    #Get food suggestion based on the prediction
-    food_suggestion = suggest_foods(predicted_calories,predicted_carbs,predicted_protein,predicted_fat)
+    # Get food suggestion based on the prediction
+    food_suggestion = suggest_foods(predicted_calories, predicted_carbs, predicted_protein, predicted_fat)
 
-    #Clear conversation context after prediction
-    conversation_context.pop(user_id,None)
+    # Clear conversation context after prediction
+    conversation_context.pop(user_id, None)
 
-    #Return prediction and food suggestion response
+    # Return prediction and food suggestion response
     return jsonify({
-        'response': f"Suggested dailt intake: {predicted_calories:.2f}calories,{predicted_carbs:.2f}g carbs,
-        {predicted_protein:.2f}g protein,{predicted_fat:.2f}g fat.",
+        'response': f"Suggested daily intake: {predicted_calories:.2f} calories, {predicted_carbs:.2f}g carbs, {predicted_protein:.2f}g protein, {predicted_fat:.2f}g fat.",
         'food suggestion': food_suggestion
     })
 
