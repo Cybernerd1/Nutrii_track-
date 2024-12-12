@@ -13,7 +13,7 @@ services:
     autoDeploy: true
 
   # Frontend: React.js App
-services:
+
   - type: web
     name: chatbot-frontend
     env: node
