@@ -13,10 +13,10 @@ services:
     autoDeploy: true
 
   # Frontend: React.js App
+services:
   - type: web
     name: chatbot-frontend
     env: node
     buildCommand: npm install && npm run build
     startCommand: npm start
-    staticPublishPath: build
     autoDeploy: true
